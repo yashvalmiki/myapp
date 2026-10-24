@@ -1,3 +1,4 @@
+
 name: CD - Deploy to EC2
 
 on:
@@ -13,20 +14,21 @@ jobs:
 
     steps:
       - name: Deploy to EC2
-        uses: appleboy/ssh-action@v0.1.7
+        uses: appleboy/ssh-action@v1.2.0
         with:
-          host: ${{ secrets.HOST_DNS }}
-          username: ubuntu
-          key: ${{ secrets.EC2_SSH_KEY }}
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.KEY }}
+          port: 22
+          timeout: 30s
+          command_timeout: 5m
           script: |
-            IMAGE=${{ secrets.DOCKER_USERNAME }}/myapp
-            TAG=${{ github.event.workflow_run.head_sha }}
-
-            sudo apt-get update -y
-            sudo apt-get install -y docker.io apache2
-
-            sudo docker rm -f myapp || true
-            sudo docker pull $IMAGE:$TAG
-            sudo docker run -d --name myapp -p 8080:80 $IMAGE:$TAG
-
-            sudo systemctl restart apache2
+            set -e
+            docker pull YOUR_DOCKERHUB_USERNAME/YOUR_IMAGE_NAME:latest
+            docker stop myapp || true
+            docker rm myapp || true
+            docker run -d \
+              --name myapp \
+              --restart unless-stopped \
+              -p 80:3000 \
+              YOUR_DOCKERHUB_USERNAME/YOUR_IMAGE_NAME:latest
